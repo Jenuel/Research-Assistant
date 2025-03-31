@@ -1,6 +1,14 @@
 from sqlalchemy.orm import Session
 from app.models.document_model import Document
 from fastapi import UploadFile
+from langchain.document_loaders import DirectoryLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+def convert_to_chunks(content: str):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200
+    )
+    return text_splitter.split_text(document.file.read())
 
 def save_document(db: Session, document: UploadFile) -> Document:
     """
@@ -10,6 +18,8 @@ def save_document(db: Session, document: UploadFile) -> Document:
     :param document: Document object to save
     :return: Saved document object
     """
+    content = document.file.read().decode("utf-8")  # Read and decode file content
+
     uploaded_doc = Document(
         name=document.filename, 
         content_type=document.content_type, 
