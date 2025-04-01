@@ -1,33 +1,53 @@
 from sqlalchemy.orm import Session
+from app.db.chroma_client import collection
 from app.models.document_model import Document
 from fastapi import UploadFile
-from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from sentence_transformers import SentenceTransformer
+
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def convert_to_chunks(content: str):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200
-    )
-    return text_splitter.split_text(document.file.read())
+    """Splits text into smaller chunks."""
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    return text_splitter.split_text(content)
+
+def embed_chunks(chunks, uploaded_doc, document):
+    """Generates embeddings and stores in ChromaDB."""
+    chunk_embeddings = embedding_model.encode(chunks).tolist()
+    
+    for idx, chunk in enumerate(chunks):
+        collection.add(
+            ids=[f"{uploaded_doc.id}_{idx}"],  
+            embeddings=[chunk_embeddings[idx]],
+            metadatas=[{"doc_id": uploaded_doc.id, "chunk_index": idx, "filename": document.filename}],
+            documents=[chunk] 
+        )
 
 def save_document(db: Session, document: UploadFile) -> Document:
     """
-    Save a document to the database.
+    Save a document to the database and store embeddings in ChromaDB.
     
     :param db: Database session
     :param document: Document object to save
     :return: Saved document object
     """
-    content = document.file.read().decode("utf-8")  # Read and decode file content
+    content = document.file.read().decode("utf-8")  
+    chunks = convert_to_chunks(content) 
 
     uploaded_doc = Document(
         name=document.filename, 
         content_type=document.content_type, 
-        data=document.file.read()
-        )
+        data=content  
+    )
     db.add(uploaded_doc)
     db.commit()
     db.refresh(uploaded_doc)
+
+    # Store embeddings in ChromaDB
+    embed_chunks(chunks, uploaded_doc, document)
+
     return uploaded_doc
 
 def get_document(db: Session, document_id: int) -> Document:
