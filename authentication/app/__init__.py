@@ -1,7 +1,8 @@
 from flask import Flask
 from dotenv import load_dotenv
-from os import os
+import os
 from app.db import db
+from app.routes import auth_bp
 
 def create_app():
     """
@@ -20,5 +21,6 @@ def create_app():
     db.init_app(app)
 
     # Register blueprints
+    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     return app
