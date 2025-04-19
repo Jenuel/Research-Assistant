@@ -46,36 +46,36 @@ function LoginPage() {
                 <p className="text-sm mb-6">
                     or <Link to="/register" className="text-blue-700 hover:underline">create an account</Link>
                 </p>
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
-                    />
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                />
+                {error && <p className="text-red-500 text-sm">{error}</p>}
 
-                    <div className="flex items-center">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
                         <input type="checkbox" id="remember" className="mr-2" />
                         <label htmlFor="remember">Remember me</label>
                     </div>
+                    <Link to="/" className="text-sm text-blue-700 hover:underline">Forgot your password?</Link>
+                </div>
 
-                    <p className="text-sm text-blue-700 mt-4 hover:underline">
-                        <Link to="/">Forgot your password?</Link>
-                    </p>
+                <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800">
+                    Sign in
+                </button>
+            </form>
 
-                    <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800">
-                        Sign in
-                    </button>
-                </form>
 
                 <div className="flex items-center my-4">
                     <hr className="flex-grow border-gray-300" />
