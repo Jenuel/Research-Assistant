@@ -4,6 +4,7 @@ from app.models.document_model import Document
 from fastapi import UploadFile
 from sentence_transformers import SentenceTransformer
 import textwrap
+from uuid import uuid4
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -18,22 +19,38 @@ def save_document(db: Session, document: UploadFile) -> Document:
     :param document: Document object to save
     :return: Saved document object
     """
-    content = document.file.read().decode("utf-8")  
+    content = document.file.read().decode("utf-8")
 
     uploaded_doc = Document(
-        name=document.filename, 
-        content_type=document.content_type, 
-        data=content  
+        name=document.filename,
+        content_type=document.content_type,
+        data=content
     )
+
     db.add(uploaded_doc)
     db.commit()
-    db.refresh(uploaded_doc)
+    db.refresh(uploaded_doc) 
 
     chunks = chunk_text(content)
-    
-    embeddings = embedding_model.encode(chunks)
+    embeddings = embedding_model.encode(chunks).tolist()
 
-    
+    chunk_ids = [str(uuid4()) for _ in chunks]
+    metadatas = [
+        {
+            "doc_id": uploaded_doc.id,
+            "chunk_index": i,
+            "filename": document.filename,
+        }
+        for i in range(len(chunks))
+    ]
+
+    collection.add(
+        documents=chunks,
+        embeddings=embeddings,
+        metadatas=metadatas,
+        ids=chunk_ids,
+    )
+
     return uploaded_doc
 
 def get_document(db: Session, document_id: int) -> Document:
