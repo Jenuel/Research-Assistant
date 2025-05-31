@@ -8,3 +8,5 @@ requests
 python-dotenv
 psycopg2  
 sqlalchemy  
+
+#check if the sentence transformers library is installed
