@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.chroma_client import collection
+from app.db.database import get_db
 from app.models.document_model import Document
 from fastapi import UploadFile
 from sentence_transformers import SentenceTransformer
@@ -11,7 +12,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 def chunk_text(text: str, chunk_size: int = 512) -> list[str]:
     return textwrap.wrap(text, chunk_size)
 
-def save_document(db: Session, document: UploadFile) -> Document:
+def save_document(document: UploadFile, db: Session) -> Document:
     """
     Save a document to the database.
     
@@ -73,6 +74,13 @@ def delete_document(db: Session, document_id: int) -> bool:
     """
     document = db.query(Document).filter(Document.id == document_id).first()
     if document:
+        results = collection.get(where={"doc_id": document_id})
+        ids_to_delete = results.get("ids", [])
+
+        if ids_to_delete:
+            collection.delete(ids=ids_to_delete)
+
+
         db.delete(document)
         db.commit()
         return True
