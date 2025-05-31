@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.document_model import Document
-from app.crud.document_crud import save_document, get_document
+from app.crud.document_crud import save_document, get_document, delete_document
 
 router = APIRouter()
 
@@ -26,3 +26,10 @@ async def fetch_file(file_id: int, db: Session = Depends(get_db)):
         "content_type": db_file.content_type, #Add JSON Parser
         "data": db_file.data.decode("utf-8")  
     }
+
+router.delete("/delete/{file_id}")
+async def delete_file(file_id: int, db: Session = Depends(get_db)):
+    if not delete_document(db, file_id):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return {"detail": "File deleted successfully"}

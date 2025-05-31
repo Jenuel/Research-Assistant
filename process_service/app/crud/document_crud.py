@@ -33,3 +33,18 @@ def get_document(db: Session, document_id: int) -> Document:
     :return: Document object if found, None otherwise
     """
     return db.query(Document).filter(Document.id == document_id).first()
+
+def delete_document(db: Session, document_id: int) -> bool:
+    """
+    Delete a document from the database by its ID.
+    
+    :param db: Database session
+    :param document_id: ID of the document to delete
+    :return: True if deletion was successful, False otherwise
+    """
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if document:
+        db.delete(document)
+        db.commit()
+        return True
+    return False
