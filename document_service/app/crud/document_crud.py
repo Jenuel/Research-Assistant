@@ -2,6 +2,13 @@ from sqlalchemy.orm import Session
 from app.db.chroma_client import collection
 from app.models.document_model import Document
 from fastapi import UploadFile
+from sentence_transformers import SentenceTransformer
+import textwrap
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+def chunk_text(text: str, chunk_size: int = 512) -> list[str]:
+    return textwrap.wrap(text, chunk_size)
 
 def save_document(db: Session, document: UploadFile) -> Document:
     """
@@ -22,6 +29,11 @@ def save_document(db: Session, document: UploadFile) -> Document:
     db.commit()
     db.refresh(uploaded_doc)
 
+    chunks = chunk_text(content)
+    
+    embeddings = embedding_model.encode(chunks)
+
+    
     return uploaded_doc
 
 def get_document(db: Session, document_id: int) -> Document:
