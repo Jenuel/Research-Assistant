@@ -1,9 +1,9 @@
 from sentence_transformers import SentenceTransformer
 from app.db.chroma_client import collection
 
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def retrieve(query: str):
+def retrieve(query: str, ids: list[int]) -> list[str]:
     """
     Retrieve relevant documents based on the query.
     """
@@ -12,7 +12,8 @@ def retrieve(query: str):
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=5,
-        include=["documents", "metadatas"]
+        include=["documents", "metadatas"],
+        where={"doc_id": {"$in": ids}}
     )
 
     retrieved_docs = []
@@ -21,12 +22,12 @@ def retrieve(query: str):
 
     return retrieved_docs
 
-def generate_response(query: str):
+def generate_response(query: str, ids: list[int]):
     """
     Generate a response based on the retrieved documents.
     """
 
-    retrieved_docs = retrieve(query)
+    retrieved_docs = retrieve(query, ids)
 
     # Prompt to gemini to create a response
     response = {
