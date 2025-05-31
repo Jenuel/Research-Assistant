@@ -64,7 +64,7 @@ def get_document(db: Session, document_id: int) -> Document:
     """
     return db.query(Document).filter(Document.id == document_id).first()
 
-def delete_document(db: Session, document_id: int) -> bool:
+def delete_document(document_id: int, db: Session) -> bool:
     """
     Delete a document from the database by its ID.
     

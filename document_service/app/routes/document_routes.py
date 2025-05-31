@@ -11,7 +11,7 @@ async def upload_document(document: UploadFile = File(...), db: Session = Depend
     if not document:
         raise HTTPException(status_code=400, detail="No file provided")
     
-    db_doc = save_document(db, document)
+    db_doc = save_document(document, db)
     
     return {"filename": db_doc.name, "content_type": db_doc.content_type}
 
@@ -29,7 +29,7 @@ async def fetch_file(file_id: int, db: Session = Depends(get_db)):
 
 router.delete("/delete/{file_id}")
 async def delete_file(file_id: int, db: Session = Depends(get_db)):
-    if not delete_document(db, file_id):
+    if not delete_document(file_id, db):
         raise HTTPException(status_code=404, detail="File not found")
     
     return {"detail": "File deleted successfully"}
