@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db.chroma_client import collection
+from app.db.chroma_client import collection, chroma_client
 from app.db.database import get_db
 from app.models.document_model import Document
 from fastapi import UploadFile
@@ -52,6 +52,8 @@ def save_document(document: UploadFile, db: Session) -> Document:
         ids=chunk_ids,
     )
 
+    chroma_client.persist()
+
     return uploaded_doc
 
 def get_document(db: Session, document_id: int) -> Document:
@@ -79,6 +81,7 @@ def delete_document(document_id: int, db: Session) -> bool:
 
         if ids_to_delete:
             collection.delete(ids=ids_to_delete)
+            chroma_client.persist()
 
 
         db.delete(document)
