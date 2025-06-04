@@ -1,12 +1,7 @@
 fastapi
 uvicorn
-langchain
-chromadb  
-sentence-transformers
-pydantic
-requests
+sqlalchemy
 python-dotenv
-psycopg2  
-sqlalchemy  
-
-#check if the sentence transformers library is installed
+sentence-transformers
+chromadb
+pydantic
