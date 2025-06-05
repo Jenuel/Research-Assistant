@@ -20,7 +20,14 @@ def save_document(document: UploadFile, db: Session) -> Document:
     :param document: Document object to save
     :return: Saved document object
     """
-    content = document.file.read().decode("utf-8")
+    content = document.file.read()
+
+    try:
+        content = content.decode("utf-8")
+    except UnicodeDecodeError:
+        content = content.decode("latin-1")
+
+    content = content.replace('\x00', '')
 
     uploaded_doc = Document(
         name=document.filename,
@@ -30,9 +37,10 @@ def save_document(document: UploadFile, db: Session) -> Document:
 
     db.add(uploaded_doc)
     db.commit()
-    db.refresh(uploaded_doc) 
+    db.refresh(uploaded_doc)
 
     chunks = chunk_text(content)
+
     embeddings = embedding_model.encode(chunks).tolist()
 
     chunk_ids = [str(uuid4()) for _ in chunks]
@@ -51,9 +59,7 @@ def save_document(document: UploadFile, db: Session) -> Document:
         metadatas=metadatas,
         ids=chunk_ids,
     )
-
-    chroma_client.persist()
-
+    
     return uploaded_doc
 
 def get_document(db: Session, document_id: int) -> Document:
