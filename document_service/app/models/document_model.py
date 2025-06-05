@@ -10,7 +10,7 @@ class Document(Base):
     content_type = Column(String, index=True)
     data = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<Document(name={self.name}, created_at={self.created_at})>"
