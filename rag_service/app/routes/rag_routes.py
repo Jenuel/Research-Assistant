@@ -1,9 +1,8 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Body
+from fastapi import FastAPI, APIRouter, HTTPException
 from app.controller.rag_controller import retrieve, generate_response
 from app.schemas.query_schema import QueryRequest
 
 router = APIRouter()
-
 
 @router.post("/generate")
 async def generate_response(request_body: QueryRequest):
@@ -17,12 +16,10 @@ async def generate_response(request_body: QueryRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     if not ids:
         raise HTTPException(status_code=400, detail="IDs cannot be empty")
-    
 
-    # Placeholder for actual generation logic
-    
-    # Simulate a response generation
-    response = generate_response(query, ids)
+    context = retrieve(query, ids)
+
+    response = generate_response(query, context)
     
     return {"response": response}
 
