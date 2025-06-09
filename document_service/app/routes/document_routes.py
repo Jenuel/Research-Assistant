@@ -15,6 +15,11 @@ async def upload_document(document: UploadFile = File(...), db: Session = Depend
     
     return {"filename": db_doc.name, "content_type": db_doc.content_type}
 
+router.get("/fetch")
+async def fetch_documents(db: Session = Depends(get_db)):
+    documents = db.query(Document).all()
+    return [{"id": doc.id, "name": doc.name} for doc in documents]
+
 router.get("/fetch/{file_id}")
 async def fetch_file(file_id: int, db: Session = Depends(get_db)):
     db_file = get_document(db, file_id)
