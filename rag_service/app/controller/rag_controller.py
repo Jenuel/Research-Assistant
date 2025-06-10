@@ -1,8 +1,8 @@
 from sentence_transformers import SentenceTransformer
 from app.db.chroma_client import collection
 import os
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from google.generativeai import types
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
