@@ -15,24 +15,22 @@ async def upload_document(document: UploadFile = File(...), db: Session = Depend
     
     return {"filename": db_doc.name, "content_type": db_doc.content_type}
 
-router.get("/fetch")
+@router.get("/fetch/all")
 async def fetch_documents(db: Session = Depends(get_db)):
     documents = db.query(Document).all()
     return [{"id": doc.id, "name": doc.name} for doc in documents]
 
-router.get("/fetch/{file_id}")
+@router.get("/fetch/{file_id}")
 async def fetch_file(file_id: int, db: Session = Depends(get_db)):
     db_file = get_document(db, file_id)
     if not db_file:
         raise HTTPException(status_code=404, detail="File not found")
     
     return {
-        "filename": db_file.name,
-        "content_type": db_file.content_type, #Add JSON Parser
-        "data": db_file.data.decode("utf-8")  
+        "filename": db_file.name
     }
 
-router.delete("/delete/{file_id}")
+@router.delete("/delete/{file_id}")
 async def delete_file(file_id: int, db: Session = Depends(get_db)):
     if not delete_document(file_id, db):
         raise HTTPException(status_code=404, detail="File not found")
