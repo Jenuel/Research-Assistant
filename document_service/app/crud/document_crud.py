@@ -6,11 +6,84 @@ from fastapi import UploadFile
 from sentence_transformers import SentenceTransformer
 import textwrap
 from uuid import uuid4
+import pdfplumber
+from docx import Document as DocxDocument
+import mimetypes
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
+def extract_text_from_pdf(document: UploadFile) -> str:
+    """
+    Extract text from a PDF document using pdfplumber.
+
+    :param document: UploadFile object representing the PDF document
+    :return: Extracted text as a string
+    """
+    text_content = []
+    
+    try:
+        with pdfplumber.open(document.file) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text: 
+                    text_content.append(page_text)
+        
+        return "\n".join(text_content).replace('\x00', '')
+
+    except Exception as e:
+        document.file.seek(0) 
+        content_bytes = document.file.read()
+        try:
+            return content_bytes.decode("utf-8").replace('\x00', '')
+        except UnicodeDecodeError:
+            return content_bytes.decode("latin-1").replace('\x00', '')
+
+
+def extract_text_from_docx(document: UploadFile) -> str:
+    """
+    Extract text from a DOCX document.
+    
+    :param document: UploadFile object representing the DOCX document
+    :return: Extracted text as a string
+    """
+
+    doc = DocxDocument(document.file)
+    text = []
+    for para in doc.paragraphs:
+        text.append(para.text)
+    
+    return "\n".join(text)
+
+
+def extract_text(document: UploadFile) -> str:
+    """
+    Extract text from a document, attempting to handle various file formats.
+    """
+    content_type = document.content_type
+    filename = document.filename or ""
+    
+    if content_type in ["application/octet-stream", None]:
+        guessed_type, _ = mimetypes.guess_type(filename)
+        if guessed_type:
+            content_type = guessed_type
+
+    if content_type == "application/pdf":
+        return extract_text_from_pdf(document)
+    elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return extract_text_from_docx(document)
+    elif content_type == "text/plain":
+        content = document.file.read()
+        try:
+            return content.decode("utf-8").replace('\x00', '')
+        except UnicodeDecodeError:
+            return content.decode("latin-1").replace('\x00', '')
+    else:
+        raise ValueError(f"Unsupported document type: {content_type}")
+        
+
 def chunk_text(text: str, chunk_size: int = 512) -> list[str]:
     return textwrap.wrap(text, chunk_size)
+
 
 def save_document(document: UploadFile, db: Session) -> Document:
     """
@@ -20,14 +93,7 @@ def save_document(document: UploadFile, db: Session) -> Document:
     :param document: Document object to save
     :return: Saved document object
     """
-    content = document.file.read()
-
-    try:
-        content = content.decode("utf-8")
-    except UnicodeDecodeError:
-        content = content.decode("latin-1")
-
-    content = content.replace('\x00', '')
+    content = extract_text(document)
 
     uploaded_doc = Document(
         name=document.filename,
@@ -62,6 +128,7 @@ def save_document(document: UploadFile, db: Session) -> Document:
     
     return uploaded_doc
 
+
 def get_document(db: Session, document_id: int) -> Document:
     """
     Retrieve a document from the database by its ID.
@@ -71,6 +138,7 @@ def get_document(db: Session, document_id: int) -> Document:
     :return: Document object if found, None otherwise
     """
     return db.query(Document).filter(Document.id == document_id).first()
+
 
 def delete_document(document_id: int, db: Session) -> bool:
     """
@@ -87,7 +155,6 @@ def delete_document(document_id: int, db: Session) -> bool:
 
         if ids_to_delete:
             collection.delete(ids=ids_to_delete)
-            chroma_client.persist()
 
 
         db.delete(document)
