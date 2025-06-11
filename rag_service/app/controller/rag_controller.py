@@ -2,7 +2,9 @@ from sentence_transformers import SentenceTransformer
 from app.db.chroma_client import collection
 import os
 import google.generativeai as genai
-from google.generativeai import types
+from dotenv import load_dotenv
+
+load_dotenv()
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -14,7 +16,7 @@ def retrieve(query: str, ids: list[int]) -> list[str]:
 
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=5,
+        n_results=2,
         include=["documents", "metadatas"],
         where={"doc_id": {"$in": ids}}
     )
@@ -29,8 +31,11 @@ def generate_response(query: str, answers: list[str]):
     """
     Generate a response based on the retrieved documents.
     """
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    print(f"API_KEY: {GEMINI_API_KEY}")
 
+    genai.configure(api_key=GEMINI_API_KEY)
+    
     formatted_documents = "\n\n".join(
         f"Document {i + 1}:\n{answer}" for i, answer in enumerate(answers)
     )
@@ -42,20 +47,16 @@ def generate_response(query: str, answers: list[str]):
         "Answer:"
     )
 
-    contents = [
-        types.Content(
-            role="user",
-            parts=[types.Part.from_text(prompt)],
-        )
-    ]
-
-    config = types.GenerateContentConfig(response_mime_type="text/plain")
+    print(f"Prompt: {prompt}")
 
     response_text = ""
-    for chunk in client.models.generate_content_stream(
-        model="gemini-2.5-flash-preview-04-17",
-        contents=contents,
-        config=config,
+
+    model = genai.GenerativeModel('gemini-2.5-flash-preview-04-17') 
+
+    for chunk in model.generate_content(
+        [prompt],
+        stream=True,  
+        generation_config={"response_mime_type": "text/plain"},
     ):
         if chunk.text:
             response_text += chunk.text
