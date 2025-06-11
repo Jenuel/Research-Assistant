@@ -5,7 +5,7 @@ from app.schemas.query_schema import QueryRequest
 router = APIRouter()
 
 @router.post("/generate")
-async def generate_response(request_body: QueryRequest):
+async def generate_answer(request_body: QueryRequest):
     """
     Generate a response based on the provided query.
     """
@@ -18,7 +18,6 @@ async def generate_response(request_body: QueryRequest):
         raise HTTPException(status_code=400, detail="IDs cannot be empty")
 
     context = retrieve(query, ids)
-
     response = generate_response(query, context)
     
     return {"response": response}
