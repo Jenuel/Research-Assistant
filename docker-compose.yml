@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+  authdb:
+    image: mysql
+    container_name: authdb
+    restart: always
+    environment:
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - authdb-data:/var/lib/mysql
+  
+  postgresdb:
+    image: postgres
+    container_name: postgresdb
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgresdb-data:/var/lib/postgresql/data
+  
+  vecdb:
+    image: chromadb/chroma:latest
+    container_name: vecdb
+    restart: always
+    ports:
+      - "8080:8000"
+    volumes:
+      - chromadb-data:/chroma/chroma
+  
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - authdb
+  # Context might be wrong
+  doc-service:
+    build: ./document-service
+    container_name: doc-service
+    ports:
+      - "6000:6000" # Change port colliding with flask
+    environment:
+      - DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - postgresdb
+      - vecdb
+
+  rag-service:
+    build: ./rag-service
+    container_name: first-service
+    ports:
+      - "7000:7000"
+    environment:
+      - GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      - vecdb
+
+  frontend-service: # Not yet finalized
+    build: ./frontend
+    container_name: frontend-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - doc-service
+      - rag-service
+
+volumes:
+  authdb-data:
+  postgresdb-data:
+  chroma-data:
