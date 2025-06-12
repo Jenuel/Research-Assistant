@@ -5,14 +5,18 @@ from flask import request, jsonify
 def authenticate_user():
     data = request.get_json()
 
-    if not data or data.get('username') is None or data.get('password') is None:
-        return jsonify({"message": "Missing username or password"}), 400
+    if not data or data.get('email') is None or data.get('password') is None:
+        return jsonify({"message": "Missing email or password"}), 400
     
-    user = User.query.filter_by(username=data['username']).first()
+    user = User.query.filter_by(email=data['email']).first()
 
     if not user or not user.check_password(data['password']):   
-        return jsonify({"message": "Invalid username or password"}), 404
+        return jsonify({"message": "Invalid email or password"}), 404
     
+    token = user.generate_token()
+
+    return jsonify({"token": token}), 200
+
 def register_user():
     data = request.get_json()
 
@@ -26,12 +30,10 @@ def register_user():
     
     new_user = User(
         email=data['email'],
-        password=data['password'],
         first_name=data['first_name'],
         last_name=data['last_name'],
-        created_at=db.func.now(),
-        updated_at=db.func.now()
     )
+    new_user.set_password(data['password'])
     
     db.session.add(new_user)
     db.session.commit()
