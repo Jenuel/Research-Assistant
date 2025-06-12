@@ -1,5 +1,5 @@
 from app.db import db
-import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
@@ -28,7 +28,7 @@ class User(db.Model):
         EXPIRATION_TIME = os.getenv('TOKEN_EXPIRATION_TIME', 86400)  
         paylod = {
             'user_id': self.id,
-            'exp': datetime.utcnow() + datetime.timedelta(seconds=EXPIRATION_TIME)  # Token valid for 1 day
+            'exp': datetime.utcnow() + timedelta(seconds=EXPIRATION_TIME)  # Token valid for 1 day
         }
         token = jwt.encode(paylod, os.getenv('SECRET_KEY'), algorithm='HS256')
         return token
