@@ -6,7 +6,7 @@ services:
     container_name: authdb
     restart: always
     environment:
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
@@ -30,48 +30,49 @@ services:
     ports:
       - "8080:8000"
     volumes:
-      - chromadb-data:/chroma/chroma
+      - chroma-data:/chroma/chroma
   
   auth-service:
-    build: ./auth-service
+    build: ./authentication
     container_name: auth-service
     ports:
       - "5000:5000"
-    environment:
-      - DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - ./authentication/.env
     depends_on:
       - authdb
-  # Context might be wrong
+
+
   doc-service:
-    build: ./document-service
+    build: ./document_service
     container_name: doc-service
     ports:
-      - "6000:6000" # Change port colliding with flask
-    environment:
-      - DATABASE_URL: ${DATABASE_URL}
+      - "6000:6000" 
+    env_file:
+      - ./document_service/.env
     depends_on:
       - postgresdb
       - vecdb
 
   rag-service:
-    build: ./rag-service
-    container_name: first-service
+    build: ./rag_service
+    container_name: rag-service
     ports:
       - "7000:7000"
-    environment:
-      - GEMINI_API_KEY: ${GEMINI_API_KEY}
+    env_file:
+      - ./rag_service/.env
     depends_on:
       - vecdb
 
-  frontend-service: # Not yet finalized
-    build: ./frontend
-    container_name: frontend-service
-    ports:
-      - "3000:3000"
-    depends_on:
-      - auth-service
-      - doc-service
-      - rag-service
+  # frontend-service: # Not yet finalized
+  #   build: ./frontend
+  #   container_name: frontend-service
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - auth-service
+  #     - doc-service
+  #     - rag-service
 
 volumes:
   authdb-data:
