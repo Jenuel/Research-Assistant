@@ -17,7 +17,11 @@ def authenticate_user():
     
     token = user.generate_token()
 
-    return jsonify({"token": token}), 200
+    response = jsonify({"message": "Login successful"})
+
+    response.set_cookie('auth_token', token, httponly=True, secure=True, samesite='Strict')
+
+    return response, 200
 
 
 def register_user():
