@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageSquare, Upload, Sparkles, Brain, Shield } from "lucide-react"
 import { getLocalStorage, setLocalStorage } from "@/lib/utils"
+import axios from "axios"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -33,14 +34,18 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simulate authentication delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     try {
       if (email && password) {
-        // Store auth state in localStorage
-        setLocalStorage("isAuthenticated", "true")
-        setLocalStorage("userEmail", email)
+        const response = await axios.post(
+          "http://localhost:8000/", // TODO: Update with associated backend URL
+          { email, password },
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }
+        )
         router.push("/dashboard")
       } else {
         setError("Please enter both email and password")
