@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageSquare, Upload, Sparkles, Brain, Shield } from "lucide-react"
-import { getLocalStorage, setLocalStorage } from "@/lib/utils"
 import axios from "axios"
 
 export default function LoginPage() {
@@ -22,11 +21,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true)
-    // Check if already authenticated
-    const isAuthenticated = getLocalStorage("isAuthenticated")
-    if (isAuthenticated) {
-      router.push("/dashboard")
+
+    const verifyToken = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/auth/verify", { 
+          withCredentials: true,
+        });
+
+        if (response.status === 200) {
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Token verification failed:", error);
+      }
     }
+    verifyToken();
   }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,7 +46,7 @@ export default function LoginPage() {
     try {
       if (email && password) {
         const response = await axios.post(
-          "http://localhost:8000/", // TODO: Update with associated backend URL
+          "http://localhost:5000/login",
           { email, password },
           {
             withCredentials: true,
@@ -46,7 +55,12 @@ export default function LoginPage() {
             }
           }
         )
-        router.push("/dashboard")
+        if (response.status === 200) {
+          router.push("/dashboard")
+        }
+        else {
+          setError("Invalid email or password")
+        }
       } else {
         setError("Please enter both email and password")
       }
