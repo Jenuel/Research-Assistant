@@ -23,6 +23,17 @@ def authenticate_user():
 
     return response, 200
 
+def verify_user():
+    token = request.cookies.get('auth_token')
+
+    if not token:
+        return jsonify({"message": "Authentication token is missing"}), 401
+    
+    payload = User.verify_token(token)
+    if not payload:
+        return jsonify({"message": "Invalid or expired token"}), 401
+    
+    return jsonify({"message": "Token is valid", "user_id": payload['user_id'], "email": payload['email']}), 200
 
 def register_user():
     try:
