@@ -28,10 +28,21 @@ class User(db.Model):
         EXPIRATION_TIME = os.getenv('TOKEN_EXPIRATION_TIME', 86400)  
         paylod = {
             'user_id': self.id,
-            'exp': datetime.utcnow() + timedelta(seconds=EXPIRATION_TIME)  # Token valid for 1 day
+            'email': self.email,
+            'exp': datetime.utcnow() + timedelta(seconds=int(EXPIRATION_TIME))
         }
         token = jwt.encode(paylod, os.getenv('SECRET_KEY'), algorithm='HS256')
         return token
     
+    def verify_token(self, token):
+        try:
+            payload = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=['HS256'])
+            return payload
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+        
+        
     def __repr__(self):
         return f"<User {self.email}"
