@@ -1,8 +1,12 @@
 from ..models.user import User
 from ..db import db
 from ..schemas.user_schema import UserLoginSchema, UserRegistrationSchema
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 from pydantic import ValidationError
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 def authenticate_user():
     try:
@@ -16,6 +20,9 @@ def authenticate_user():
         return jsonify({"message": "Invalid email or password"}), 401
     
     token = user.generate_token()
+
+    response= make_response(jsonify({"message": "Login successful"}), 200)
+    response.set_cookie('token', token, httponly=True, secure=True, samesite='Strict', max_age=os.getenv('TOKEN_EXPIRATION_TIME', 86400))  
 
     return jsonify({"token": token}), 200
 
@@ -36,9 +43,15 @@ def register_user():
         first_name=data.first_name,
         last_name=data.last_name,
     )
+
     new_user.set_password(data.password)
     
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"message": "User registered successfully"}), 201
+
+def logout_user():
+    response = make_response(jsonify({"message": "Logout successful"}), 200)
+    response.set_cookie('token', '', httponly=True, secure=True, samesite='Strict', expires=0)
+    return response
