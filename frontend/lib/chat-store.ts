@@ -48,7 +48,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const selectedIds = selectedFiles.map((file) => file.id)
     
     try {
-      const response = await axios.post("https://localhost:7000/api/rag/generate", {
+      const response = await axios.post("http://localhost:7000/api/rag/generate", {
         ids: selectedIds
       });
 

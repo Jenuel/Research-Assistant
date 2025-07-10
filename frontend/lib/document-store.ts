@@ -107,7 +107,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       ) {
         try {
           const formData = new FormData();
-          formData.append("file", file)
+          formData.append("document", file)
           const response = await axios.post("http://localhost:6000/api/documents/upload", formData, {
             headers: {
               "Content-type": "multipart/form-data"
@@ -117,7 +117,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
           const uploadedFile = {
             id: response.data.id,
             name: response.data.name,
-            type: response.data.type,
+            type: response.data.content_type,
             size: response.data. size,
             uploadDate: new Date(response.data.uploadDate),
             checked: false,
