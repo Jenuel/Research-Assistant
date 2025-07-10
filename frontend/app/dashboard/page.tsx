@@ -7,7 +7,6 @@ import DocumentList from "@/components/document-list"
 import ChatInterface from "@/components/chat-interface"
 import { useDocumentStore } from "@/lib/document-store"
 import { Brain } from "lucide-react"
-import { getLocalStorage } from "@/lib/utils"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -19,8 +18,8 @@ export default function DashboardPage() {
     setMounted(true)
 
     // Check authentication
-    const authStatus = getLocalStorage("isAuthenticated")
-    const email = getLocalStorage("userEmail")
+    const authStatus = localStorage.getItem("isAuthenticated")
+    const email = localStorage.getItem("userEmail")
 
     if (!authStatus) {
       router.push("/login")

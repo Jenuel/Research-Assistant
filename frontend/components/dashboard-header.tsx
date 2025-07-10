@@ -5,15 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Brain, LogOut } from "lucide-react"
 import { useDocumentStore } from "@/lib/document-store"
-import { removeLocalStorage } from "@/lib/utils"
 
 export default function DashboardHeader() {
   const router = useRouter()
   const { uploadedFiles, userEmail } = useDocumentStore()
 
   const handleLogout = () => {
-    removeLocalStorage("isAuthenticated")
-    removeLocalStorage("userEmail")
+    localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("userEmail")
     router.push("/login")
   }
 
@@ -48,4 +47,4 @@ export default function DashboardHeader() {
       </div>
     </header>
   )
-} 
+}

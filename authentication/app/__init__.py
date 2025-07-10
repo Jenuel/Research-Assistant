@@ -5,6 +5,7 @@ from .db import db
 from .routes.auth_routes import auth_bp
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from flask_cors import CORS
 
 def create_app():
     """
@@ -16,6 +17,8 @@ def create_app():
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    CORS(app)
 
     db.init_app(app)
 

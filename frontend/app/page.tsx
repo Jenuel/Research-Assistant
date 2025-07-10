@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Brain, Sparkles } from "lucide-react"
-import { getLocalStorage } from "@/lib/utils"
 
 export default function HomePage() {
   const router = useRouter()
@@ -12,7 +11,7 @@ export default function HomePage() {
   useEffect(() => {
     // Check if user is authenticated
     const checkAuth = () => {
-      const isAuthenticated = getLocalStorage("isAuthenticated")
+      const isAuthenticated = localStorage.getItem("isAuthenticated")
 
       if (isAuthenticated) {
         router.push("/dashboard")
@@ -44,4 +43,4 @@ export default function HomePage() {
   }
 
   return null
-} 
+}
