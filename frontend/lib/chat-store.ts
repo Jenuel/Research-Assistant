@@ -2,6 +2,7 @@
 
 import { create } from "zustand"
 import { useDocumentStore } from "./document-store"
+import axios from "axios";
 
 export interface ChatMessage {
   id: string
@@ -43,25 +44,39 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isLoading: true,
     }))
 
-    // Simulate backend response
-    setTimeout(() => {
-      const selectedFiles = useDocumentStore.getState().uploadedFiles.filter((file) => file.checked)
+    const selectedFiles = useDocumentStore.getState().uploadedFiles.filter((file) => file.checked)
+    const selectedIds = selectedFiles.map((file) => file.id)
+    
+    try {
+      const response = await axios.post("https://localhost:7000/api/rag/generate", {
+        ids: selectedIds
+      });
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: `I've analyzed your query "${currentMessage}" ${
-          selectedFiles.length > 0
-            ? `based on ${selectedFiles.length} selected document(s): ${selectedFiles.map((f) => f.name).join(", ")}`
-            : "but no documents are currently selected"
-        }. This is a simulated response from the backend that would provide intelligent insights from your documents.`,
+        content: response.data.message,
         timestamp: new Date(),
       }
+      
+      set((state) => ({
+        chatMessages: [...state.chatMessages, assistantMessage],
+        isLoading: false,
+      }))
+    } catch (error) {
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: "assistant",
+        content: "Something went wrong with the server. Please try again later",
+        timestamp: new Date(),
+      }
+
+      console.error("An error have occured:", error)
 
       set((state) => ({
         chatMessages: [...state.chatMessages, assistantMessage],
         isLoading: false,
       }))
-    }, 1500)
+    }
   },
 }))
