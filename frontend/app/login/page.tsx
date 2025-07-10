@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageSquare, Upload, Sparkles, Brain, Shield } from "lucide-react"
-import { getLocalStorage, setLocalStorage } from "@/lib/utils"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -22,7 +21,7 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true)
     // Check if already authenticated
-    const isAuthenticated = getLocalStorage("isAuthenticated")
+    const isAuthenticated = localStorage.getItem("isAuthenticated")
     if (isAuthenticated) {
       router.push("/dashboard")
     }
@@ -39,8 +38,8 @@ export default function LoginPage() {
     try {
       if (email && password) {
         // Store auth state in localStorage
-        setLocalStorage("isAuthenticated", "true")
-        setLocalStorage("userEmail", email)
+        localStorage.setItem("isAuthenticated", "true")
+        localStorage.setItem("userEmail", email)
         router.push("/dashboard")
       } else {
         setError("Please enter both email and password")
