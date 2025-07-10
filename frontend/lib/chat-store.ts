@@ -48,14 +48,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const selectedIds = selectedFiles.map((file) => file.id)
     
     try {
+      console.log(selectedIds)
       const response = await axios.post("http://localhost:7000/api/rag/generate", {
+        query: currentMessage,
         ids: selectedIds
       });
+
+      console.log(response)
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: response.data.message,
+        content: response.data.response,
         timestamp: new Date(),
       }
       

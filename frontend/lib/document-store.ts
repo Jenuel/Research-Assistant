@@ -59,7 +59,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isDeletingFile: true, deletingFileId: fileId })
 
     try {
-      await axios.delete(`http://localhost:6000/api/documents/delete/${fileId}`)
+      await axios.delete(`http://localhost:6060/api/documents/delete/${fileId}`)
 
       set((state) => {
         const updatedFiles = state.uploadedFiles.filter((file) => file.id !== fileId)
@@ -78,17 +78,23 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   fetchDocuments: async () => {
-    set({ isLoadingDocuments: true })
+    set({ isLoadingDocuments: true });
 
     try {
-      const response = await axios.get("http://localhost:6000/api/documents/fetch/all")
-      const fetchedDocuments = response.data
+      const response = await axios.get("http://localhost:6060/api/documents/fetch/all");
+      const fetchedDocuments = response.data;
 
-      set({ uploadedFiles: fetchedDocuments })
+      const normalizedDocuments = fetchedDocuments.map((file: any) => ({
+        ...file,
+        uploadDate: new Date(file.uploadDate),
+        checked: false,
+      }));
+
+      set({ uploadedFiles: normalizedDocuments });
     } catch (error) {
-      console.error("Failed to fetch documents:", error)
+      console.error("Failed to fetch documents:", error);
     } finally {
-      set({ isLoadingDocuments: false })
+      set({ isLoadingDocuments: false });
     }
   },
 
@@ -108,7 +114,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         try {
           const formData = new FormData();
           formData.append("document", file)
-          const response = await axios.post("http://localhost:6000/api/documents/upload", formData, {
+          const response = await axios.post("http://localhost:6060/api/documents/upload", formData, {
             headers: {
               "Content-type": "multipart/form-data"
             },
