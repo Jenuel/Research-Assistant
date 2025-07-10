@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import axios from "axios"
 import { create } from "zustand"
 
 export interface UploadedFile {
@@ -59,8 +59,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isDeletingFile: true, deletingFileId: fileId })
 
     try {
-      // Simulate API call - replace with your actual API call
-      await simulateDeleteAPICall(fileId)
+      await axios.delete(`http://localhost:6000/api/documents/delete/${fileId}`)
 
       set((state) => {
         const updatedFiles = state.uploadedFiles.filter((file) => file.id !== fileId)
@@ -82,10 +81,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isLoadingDocuments: true })
 
     try {
-      // Simulate API call to fetch documents - replace with your actual API call
-      const fetchedDocuments = await simulateFetchDocuments()
+      const response = await axios.get("http://localhost:6000/api/documents/fetch/all")
+      const fetchedDocuments = response.data
 
-      // Set the fetched documents (these are already uploaded)
       set({ uploadedFiles: fetchedDocuments })
     } catch (error) {
       console.error("Failed to fetch documents:", error)
@@ -108,18 +106,23 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         file.type === "application/msword"
       ) {
         try {
-          const response = await simulateAPICall(file)
+          const formData = new FormData();
+          formData.append("file", file)
+          const response = await axios.post("http://localhost:6000/api/documents/upload", formData, {
+            headers: {
+              "Content-type": "multipart/form-data"
+            },
+          });
 
           const uploadedFile = {
-            id: response.id,
-            name: response.name,
-            type: response.type,
-            size: response.size,
-            uploadDate: new Date(response.uploadDate),
+            id: response.data.id,
+            name: response.data.name,
+            type: response.data.type,
+            size: response.data. size,
+            uploadDate: new Date(response.data.uploadDate),
             checked: false,
           }
 
-          // Add to uploaded files only after successful upload
           set((state) => ({
             uploadedFiles: [...state.uploadedFiles, uploadedFile],
           }))
@@ -135,64 +138,3 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     event.target.value = ""
   },
 }))
-
-// Simulate API call to fetch documents - replace with your actual API call
-async function simulateFetchDocuments(): Promise<UploadedFile[]> {
-  // Simulate network delay
-  const delay = Math.random() * 1000 + 1000 // 1-2 seconds
-  await new Promise((resolve) => setTimeout(resolve, delay))
-
-  // Return some mock documents (in real app, this would come from your API)
-  return [
-    {
-      id: "doc1",
-      name: "Sample Document.pdf",
-      type: "application/pdf",
-      size: 1024000,
-      uploadDate: new Date(Date.now() - 86400000), // 1 day ago
-      checked: false,
-    },
-    {
-      id: "doc2",
-      name: "Report.docx",
-      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      size: 512000,
-      uploadDate: new Date(Date.now() - 172800000), // 2 days ago
-      checked: false,
-    },
-  ]
-}
-
-// Simulate API call for upload - replace with your actual API call
-async function simulateAPICall(file: File) {
-  // Simulate API response time (2-4 seconds)
-  const delay = Math.random() * 2000 + 2000
-  await new Promise((resolve) => setTimeout(resolve, delay))
-
-  // Simulate potential upload failure (10% chance)
-  if (Math.random() < 0.1) {
-    throw new Error("Upload failed")
-  }
-
-  // Return mock response that matches your API structure
-  return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-    name: file.name,
-    type: file.type,
-    size: file.size,
-    uploadDate: new Date().toISOString(),
-    status: "uploaded",
-  }
-}
-
-// Simulate API call for delete - replace with your actual API call
-async function simulateDeleteAPICall(fileId: string) {
-  // Simulate API response time (1-2 seconds)
-  const delay = Math.random() * 1000 + 1000
-  await new Promise((resolve) => setTimeout(resolve, delay))
-
-  // Simulate potential delete failure (5% chance)
-  if (Math.random() < 0.05) {
-    throw new Error("Delete failed")
-  }
-}
