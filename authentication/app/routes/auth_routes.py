@@ -14,3 +14,7 @@ def verfiy():
 @auth_bp.route('/register', methods=['POST'])
 def register():
     return register_user()
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    return logout_user
