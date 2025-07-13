@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageSquare, Upload, Sparkles, Brain, Shield } from "lucide-react"
+import axios from 'axios'
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -20,11 +21,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true)
-    // Check if already authenticated
-    const isAuthenticated = localStorage.getItem("isAuthenticated")
-    if (isAuthenticated) {
-      router.push("/dashboard")
-    }
+
+    const verifyAuth = async () => {
+      try {
+        const response = await axios.post("http://localhost:5000/auth/verify", {}, {
+          withCredentials: true
+        });
+
+        if (response.status === 200) {
+          router.push("/dashboard")
+        }
+      } catch (error) {
+        console.error("Error Message:", error)
+      }
+    };
+
+    verifyAuth();
   }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,20 +44,28 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simulate authentication delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     try {
       if (email && password) {
-        // Store auth state in localStorage
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        router.push("/dashboard")
+
+        const response = await axios.post("http://localhost:5000/auth/login",{
+          email: email,
+          password: password
+        }, {
+          withCredentials:true
+        })
+
+        if (response.status === 200) {
+          router.push("/dashboard")
+        }
       } else {
         setError("Please enter both email and password")
       }
     } catch (err) {
-      setError("Authentication failed. Please try again.")
+        if (axios.isAxiosError(err) && err.response) {
+          setError(err.response.data.message || "An error occurred");
+        } else {
+          setError(err instanceof Error ? err.message : "An unknown error occurred");
+        }
     } finally {
       setIsLoading(false)
     }

@@ -7,6 +7,7 @@ import DocumentList from "@/components/document-list"
 import ChatInterface from "@/components/chat-interface"
 import { useDocumentStore } from "@/lib/document-store"
 import { Brain } from "lucide-react"
+import axios from 'axios'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -17,17 +18,24 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true)
 
-    // Check authentication
-    const authStatus = localStorage.getItem("isAuthenticated")
-    const email = localStorage.getItem("userEmail")
+    const verifyAuth = async () => {
+      try {
+        const response = await axios.post("http://localhost:5000/auth/verify", {}, {
+          withCredentials: true
+        });
 
-    if (!authStatus) {
-      router.push("/login")
-      return
-    }
+        if (response.status === 200) {
+          setIsAuthenticated(true)
+          setUserEmail(response.data.user?.email || "")
+        }
+      } catch (error) {
+        console.error("Error Message:", error)
+        router.push("/login")
+      }
+    };
 
-    setIsAuthenticated(true)
-    setUserEmail(email || "")
+    verifyAuth();
+
   }, [router, setUserEmail])
 
   if (!mounted || !isAuthenticated) {
