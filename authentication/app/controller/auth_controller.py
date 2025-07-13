@@ -20,12 +20,34 @@ def authenticate_user():
         return jsonify({"message": "Invalid email or password"}), 401
     
     token = user.generate_token()
+    max_age = int(os.getenv('TOKEN_EXPIRATION_TIME', 86400))
 
-    response= make_response(jsonify({"message": "Login successful"}), 200)
-    response.set_cookie('token', token, httponly=True, secure=True, samesite='Strict', max_age=os.getenv('TOKEN_EXPIRATION_TIME', 86400))  
+    response= make_response(jsonify({ "message": "Login successful" }), 200)
+    response.set_cookie('token', token, httponly=True, secure=True, samesite='Strict', max_age=max_age)  
 
-    return jsonify({"token": token}), 200
+    return response
 
+def verify_user():
+    token = request.cookies.get("token")
+
+    if not token:
+        return jsonify({"message": "Token is missing"}), 401
+    
+    payload = User.verify_token(token)
+    if not payload:
+        return jsonify({"message": "Invalid or expired token"}), 401
+    
+
+    user_id = payload.get("user_id")
+    email = payload.get("email")
+
+    return jsonify({
+        "message": "Token is valid",
+        "user": {
+            "user_id": payload.get("user_id"),
+            "email": payload.get("email")
+        }
+    }), 200
 
 def register_user():
     try:

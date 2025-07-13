@@ -18,7 +18,11 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    CORS(app)
+    # Register blueprints FIRST
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    # Then apply CORS to the app (affects all routes, including blueprints)
+    CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 
     db.init_app(app)
 
@@ -37,8 +41,5 @@ def create_app():
             "message": "Welcome to the Flask App!",
             "database": db_status
         })
-
-    # Register blueprints
-    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     return app

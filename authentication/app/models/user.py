@@ -34,7 +34,8 @@ class User(db.Model):
         token = jwt.encode(paylod, os.getenv('SECRET_KEY'), algorithm='HS256')
         return token
     
-    def verify_token(self, token):
+    @staticmethod
+    def verify_token(token):
         try:
             payload = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=['HS256'])
             return payload
