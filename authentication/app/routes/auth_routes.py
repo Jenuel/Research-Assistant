@@ -1,5 +1,5 @@
 from flask import Blueprint
-from ..controller.auth_controller import authenticate_user, verify_user, register_user
+from ..controller.auth_controller import authenticate_user, verify_user, register_user, logout_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -17,4 +17,4 @@ def register():
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
-    return logout_user
+    return logout_user()

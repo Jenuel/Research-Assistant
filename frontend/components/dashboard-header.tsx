@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Brain, LogOut } from "lucide-react"
 import { useDocumentStore } from "@/lib/document-store"
+import axios from 'axios';
 
 export default function DashboardHeader() {
   const router = useRouter()
   const { uploadedFiles, userEmail } = useDocumentStore()
 
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("userEmail")
-    router.push("/login")
+    const logoutUser = async () => {
+      try {
+        await axios.post("http://localhost:5000/auth/logout", {}, {
+          withCredentials: true
+        })
+
+        router.push("/login")
+      } catch (error) {
+        console.error("An error has occured in logout:", error)
+      }
+    }
+
+    logoutUser();
   }
 
   return (
