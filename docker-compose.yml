@@ -66,15 +66,15 @@ services:
     depends_on:
       - vecdb
 
-  # frontend-service: # Not yet finalized
-  #   build: ./frontend
-  #   container_name: frontend-service
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - auth-service
-  #     - doc-service
-  #     - rag-service
+  frontend-service: 
+    build: ./frontend
+    container_name: frontend-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - doc-service
+      - rag-service
 
 volumes:
   authdb-data:
