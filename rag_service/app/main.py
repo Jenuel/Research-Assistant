@@ -14,6 +14,6 @@ app.add_middleware(
 
 app.include_router(rag_routes.router, prefix="/api/rag", tags=["retrieval_and_generation"])
 
-app.get("/")
+@app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI backend for retrieval and generation!"}
