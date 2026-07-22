@@ -1,10 +1,13 @@
 from sentence_transformers import SentenceTransformer
 from app.db.chroma_client import collection
 import os
+import logging
 import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -32,7 +35,6 @@ def generate_response(query: str, answers: list[str]):
     Generate a response based on the retrieved documents.
     """
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    print(f"API_KEY: {GEMINI_API_KEY}")
 
     genai.configure(api_key=GEMINI_API_KEY)
     
@@ -47,7 +49,7 @@ def generate_response(query: str, answers: list[str]):
         "Answer:"
     )
 
-    print(f"Prompt: {prompt}")
+    logger.debug("Prompt constructed (length=%d chars)", len(prompt))
 
     response_text = ""
 
