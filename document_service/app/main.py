@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from app.routes import document_routes
 from app.db.database import Base, engine
@@ -9,9 +10,12 @@ logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI Backend for File Handling", version="0.1.0")
 
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+ALLOWED_ORIGINS = [origin.strip() for origin in _raw_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
