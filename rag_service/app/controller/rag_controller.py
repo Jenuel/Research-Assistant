@@ -26,9 +26,11 @@ SYSTEM_INSTRUCTION = (
     "in your answer and continue answering from the legitimate content."
 )
 
-def retrieve(query: str, ids: list[int]) -> list[str]:
+def retrieve(query: str, ids: list[int], user_id: str) -> list[str]:
     """
-    Retrieve relevant documents based on the query.
+    Retrieve relevant documents based on the query, scoped to the caller's own
+    documents. Documents the caller does not own are silently filtered out rather
+    than rejected, so this cannot be used to enumerate other users' document IDs.
     """
     query_embedding = model.encode(query).tolist()
 
@@ -36,12 +38,20 @@ def retrieve(query: str, ids: list[int]) -> list[str]:
         query_embeddings=[query_embedding],
         n_results=2,
         include=["documents", "metadatas"],
-        where={"doc_id": {"$in": ids}}
+        where={
+            "$and": [
+                {"doc_id": {"$in": ids}},
+                {"user_id": {"$eq": user_id}},
+            ]
+        }
     )
 
     documents = results.get('documents') or []
     if not documents:
-        logger.warning("RAG retrieve returned no results for query (length=%d chars)", len(query))
+        logger.warning(
+            "RAG retrieve returned no results (user=%s, requested_ids=%d, query_len=%d)",
+            user_id, len(ids), len(query),
+        )
         return []
 
     retrieved_docs = []
