@@ -24,8 +24,13 @@ def retrieve(query: str, ids: list[int]) -> list[str]:
         where={"doc_id": {"$in": ids}}
     )
 
+    documents = results.get('documents') or []
+    if not documents:
+        logger.warning("RAG retrieve returned no results for query (length=%d chars)", len(query))
+        return []
+
     retrieved_docs = []
-    for doc in results['documents'][0]:
+    for doc in documents[0]:
         retrieved_docs.append(doc)
 
     return retrieved_docs
