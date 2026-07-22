@@ -3,20 +3,28 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.document_model import Document
 from app.crud.document_crud import save_document, get_document, delete_document
+from app.core.auth import get_current_user_id
 from app.core.logging import get_logger
 from datetime import datetime
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user_id)])
 
 @router.post("/upload")
-async def upload_document(document: UploadFile = File(...), db: Session = Depends(get_db)):
-    logger.info(f"POST /upload — filename='{document.filename}', content_type='{document.content_type}'")
+async def upload_document(
+    document: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    logger.info(
+        f"POST /upload — filename='{document.filename}', "
+        f"content_type='{document.content_type}', user={user_id}"
+    )
     if not document:
         logger.warning("Upload request received with no file")
         raise HTTPException(status_code=400, detail="No file provided")
-    
+
     content = await document.read()
     size_in_bytes = len(content)
     logger.debug(f"File size: {size_in_bytes} bytes")
@@ -24,7 +32,7 @@ async def upload_document(document: UploadFile = File(...), db: Session = Depend
     await document.seek(0)
 
     try:
-        db_doc = save_document(document, db)
+        db_doc = save_document(document, db, user_id)
     except ValueError as e:
         logger.error(f"Upload failed for '{document.filename}': {e}")
         raise HTTPException(status_code=422, detail=str(e))
@@ -42,9 +50,12 @@ async def upload_document(document: UploadFile = File(...), db: Session = Depend
 
 
 @router.get("/fetch/all")
-async def fetch_documents(db: Session = Depends(get_db)):
-    logger.info("GET /fetch/all — fetching all documents")
-    documents = db.query(Document).all()
+async def fetch_documents(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    logger.info(f"GET /fetch/all — fetching documents for user={user_id}")
+    documents = db.query(Document).filter(Document.user_id == user_id).all()
     logger.info(f"Returning {len(documents)} document(s)")
     return [
         {
@@ -58,24 +69,32 @@ async def fetch_documents(db: Session = Depends(get_db)):
     ]
 
 @router.get("/fetch/{file_id}")
-async def fetch_file(file_id: int, db: Session = Depends(get_db)):
-    logger.info(f"GET /fetch/{file_id}")
-    db_file = get_document(db, file_id)
+async def fetch_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    logger.info(f"GET /fetch/{file_id} — user={user_id}")
+    db_file = get_document(db, file_id, user_id)
     if not db_file:
-        logger.warning(f"File not found: id={file_id}")
+        logger.warning(f"File not found or not owned: id={file_id}, user={user_id}")
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     logger.info(f"Returning file metadata: id={file_id}, name='{db_file.name}'")
     return {
         "filename": db_file.name
     }
 
 @router.delete("/delete/{file_id}")
-async def delete_file(file_id: int, db: Session = Depends(get_db)):
-    logger.info(f"DELETE /delete/{file_id}")
-    if not delete_document(file_id, db):
-        logger.warning(f"Delete request for non-existent file: id={file_id}")
+async def delete_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    logger.info(f"DELETE /delete/{file_id} — user={user_id}")
+    if not delete_document(file_id, db, user_id):
+        logger.warning(f"Delete request for non-existent or unowned file: id={file_id}, user={user_id}")
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     logger.info(f"File deleted successfully: id={file_id}")
     return {"detail": "File deleted successfully"}

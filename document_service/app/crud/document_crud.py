@@ -112,22 +112,26 @@ def chunk_text(text: str, chunk_size: int = 512) -> list[str]:
     return chunks
 
 
-def save_document(document: UploadFile, db: Session) -> Document:
+def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
     """
     Save a document to the database.
-    
+
     :param db: Database session
     :param document: Document object to save
+    :param user_id: Clerk user ID of the owner
     :return: Saved document object
     """
-    logger.info(f"Saving document: '{document.filename}' (type={document.content_type})")
+    logger.info(
+        f"Saving document: '{document.filename}' (type={document.content_type}, user={user_id})"
+    )
 
     content = extract_text(document)
 
     uploaded_doc = Document(
         name=document.filename,
         content_type=document.content_type,
-        data=content
+        data=content,
+        user_id=user_id
     )
 
     db.add(uploaded_doc)
@@ -145,6 +149,7 @@ def save_document(document: UploadFile, db: Session) -> Document:
     metadatas = [
         {
             "doc_id": uploaded_doc.id,
+            "user_id": user_id,
             "chunk_index": i,
             "filename": document.filename,
         }
@@ -164,35 +169,47 @@ def save_document(document: UploadFile, db: Session) -> Document:
     return uploaded_doc
 
 
-def get_document(db: Session, document_id: int) -> Document:
+def get_document(db: Session, document_id: int, user_id: str) -> Document:
     """
-    Retrieve a document from the database by its ID.
-    
+    Retrieve a document from the database by its ID, scoped to its owner.
+
     :param db: Database session
     :param document_id: ID of the document to retrieve
-    :return: Document object if found, None otherwise
+    :param user_id: Clerk user ID of the requesting caller
+    :return: Document object if found and owned by the caller, None otherwise
     """
-    logger.debug(f"Fetching document id={document_id} from SQL DB")
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    logger.debug(f"Fetching document id={document_id} for user={user_id}")
+    doc = (
+        db.query(Document)
+        .filter(Document.id == document_id, Document.user_id == user_id)
+        .first()
+    )
     if doc:
         logger.info(f"Document found: id={document_id}, name='{doc.name}'")
     else:
-        logger.warning(f"Document not found: id={document_id}")
+        logger.warning(f"Document not found or not owned: id={document_id}, user={user_id}")
     return doc
 
 
-def delete_document(document_id: int, db: Session) -> bool:
+def delete_document(document_id: int, db: Session, user_id: str) -> bool:
     """
-    Delete a document from the database by its ID.
-    
+    Delete a document from the database by its ID, scoped to its owner.
+
     :param db: Database session
     :param document_id: ID of the document to delete
+    :param user_id: Clerk user ID of the requesting caller
     :return: True if deletion was successful, False otherwise
     """
-    logger.info(f"Attempting to delete document id={document_id}")
-    document = db.query(Document).filter(Document.id == document_id).first()
+    logger.info(f"Attempting to delete document id={document_id} for user={user_id}")
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id, Document.user_id == user_id)
+        .first()
+    )
     if document:
-        results = collection.get(where={"doc_id": document_id})
+        results = collection.get(
+            where={"$and": [{"doc_id": {"$eq": document_id}}, {"user_id": {"$eq": user_id}}]}
+        )
         ids_to_delete = results.get("ids", [])
 
         if ids_to_delete:
@@ -207,6 +224,6 @@ def delete_document(document_id: int, db: Session) -> bool:
         logger.info(f"Document deleted from SQL DB: id={document_id}, name='{document.name}'")
         return True
 
-    logger.warning(f"Delete failed — document id={document_id} not found")
+    logger.warning(f"Delete failed — document id={document_id} not found or not owned by user={user_id}")
     return False
-
+
