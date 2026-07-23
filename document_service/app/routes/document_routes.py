@@ -30,18 +30,18 @@ async def upload_document(
     await document.seek(0)
 
     try:
-        db_doc = save_document(document, db, user_id)
+        db_doc = save_document(document, db, user_id, size_in_bytes)
     except ValueError as e:
         logger.error(f"Upload failed: {e}")
         logger.debug(f"Failed upload was '{document.filename}'")
         raise HTTPException(status_code=422, detail=str(e))
 
-    logger.info(f"Upload successful — id={db_doc.id}, size={size_in_bytes} bytes")
+    logger.info(f"Upload successful — id={db_doc.id}, size={db_doc.size_bytes} bytes")
     return {
         "id": db_doc.id,
         "name": db_doc.name,
         "content_type": db_doc.content_type,
-        "size": size_in_bytes,
+        "size": db_doc.size_bytes,
         "uploadDate": db_doc.created_at.isoformat()
     }
 
@@ -53,14 +53,24 @@ async def fetch_documents(
 ):
     logger.info("GET /fetch/all")
     logger.debug(f"Fetching all documents for user={user_id}")
-    documents = db.query(Document).filter(Document.user_id == user_id).all()
+    documents = (
+        db.query(
+            Document.id,
+            Document.name,
+            Document.content_type,
+            Document.size_bytes,
+            Document.created_at,
+        )
+        .filter(Document.user_id == user_id)
+        .all()
+    )
     logger.info(f"Returning {len(documents)} document(s)")
     return [
         {
             "id": doc.id,
             "name": doc.name,
             "content_type": doc.content_type,
-            "size": len(doc.data.encode("utf-8")) if doc.data else 0,
+            "size": doc.size_bytes if doc.size_bytes is not None else 0,
             "uploadDate": doc.created_at.isoformat()
         }
         for doc in documents

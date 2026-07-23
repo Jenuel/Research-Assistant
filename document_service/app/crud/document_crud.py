@@ -117,16 +117,21 @@ def chunk_text(text: str, chunk_size: int = 512) -> list[str]:
     return chunks
 
 
-def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
+def save_document(
+    document: UploadFile, db: Session, user_id: str, size_bytes: int
+) -> Document:
     """
     Save a document to the database.
 
     :param db: Database session
     :param document: Document object to save
     :param user_id: Clerk user ID of the owner
+    :param size_bytes: Size of the uploaded file in bytes. Passed in by the
+        caller, which has already read the upload — it cannot be recovered from
+        the extracted text, which is a different length.
     :return: Saved document object
     """
-    logger.info(f"Saving document (type={document.content_type})")
+    logger.info(f"Saving document (type={document.content_type}, size={size_bytes} bytes)")
     logger.debug(f"Saving document '{document.filename}' for user={user_id}")
 
     content = extract_text(document)
@@ -135,6 +140,7 @@ def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
         name=document.filename,
         content_type=document.content_type,
         data=content,
+        size_bytes=size_bytes,
         user_id=user_id
     )
 

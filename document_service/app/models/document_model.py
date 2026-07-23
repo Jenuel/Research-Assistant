@@ -10,6 +10,7 @@ class Document(Base):
     name = Column(String, index=True)
     content_type = Column(String, index=True)
     data = Column(Text)
+    size_bytes = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
