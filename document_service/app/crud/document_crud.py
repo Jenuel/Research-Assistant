@@ -38,19 +38,20 @@ def extract_text_from_pdf(document: UploadFile) -> str:
                     text_content.append(page_text)
         
         extracted = "\n".join(text_content).replace('\x00', '')
-        logger.info(f"PDF text extracted successfully ({len(extracted)} chars): {document.filename}")
+        logger.info(f"PDF text extracted successfully ({len(extracted)} chars)")
+        logger.debug(f"PDF extracted from: {document.filename}")
         return extracted
 
     except Exception as e:
-        logger.warning(
-            f"pdfplumber failed for '{document.filename}', falling back to raw bytes decode. Error: {e}"
-        )
+        logger.warning(f"pdfplumber failed, falling back to raw bytes decode. Error: {e}")
+        logger.debug(f"pdfplumber fallback applies to: {document.filename}")
         document.file.seek(0) 
         content_bytes = document.file.read()
         try:
             return content_bytes.decode("utf-8").replace('\x00', '')
         except UnicodeDecodeError:
-            logger.warning(f"UTF-8 decode failed for '{document.filename}', using latin-1")
+            logger.warning("UTF-8 decode failed, using latin-1")
+            logger.debug(f"latin-1 fallback applies to: {document.filename}")
             return content_bytes.decode("latin-1").replace('\x00', '')
 
 
@@ -68,7 +69,8 @@ def extract_text_from_docx(document: UploadFile) -> str:
         text.append(para.text)
     
     extracted = "\n".join(text)
-    logger.info(f"DOCX text extracted successfully ({len(extracted)} chars): {document.filename}")
+    logger.info(f"DOCX text extracted successfully ({len(extracted)} chars)")
+    logger.debug(f"DOCX extracted from: {document.filename}")
     return extracted
 
 
@@ -97,12 +99,15 @@ def extract_text(document: UploadFile) -> str:
         try:
             decoded = content.decode("utf-8").replace('\x00', '')
         except UnicodeDecodeError:
-            logger.warning(f"UTF-8 decode failed for plain text '{filename}', using latin-1")
+            logger.warning("UTF-8 decode failed for plain text, using latin-1")
+            logger.debug(f"latin-1 fallback applies to: {filename}")
             decoded = content.decode("latin-1").replace('\x00', '')
-        logger.info(f"Plain text extracted ({len(decoded)} chars): {filename}")
+        logger.info(f"Plain text extracted ({len(decoded)} chars)")
+        logger.debug(f"Plain text extracted from: {filename}")
         return decoded
     else:
-        logger.error(f"Unsupported document type '{content_type}' for file '{filename}'")
+        logger.error(f"Unsupported document type '{content_type}'")
+        logger.debug(f"Unsupported type reported for file: {filename}")
         raise ValueError(f"Unsupported document type: {content_type}")
         
 
@@ -121,9 +126,8 @@ def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
     :param user_id: Clerk user ID of the owner
     :return: Saved document object
     """
-    logger.info(
-        f"Saving document: '{document.filename}' (type={document.content_type}, user={user_id})"
-    )
+    logger.info(f"Saving document (type={document.content_type})")
+    logger.debug(f"Saving document '{document.filename}' for user={user_id}")
 
     content = extract_text(document)
 
@@ -137,7 +141,7 @@ def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
     db.add(uploaded_doc)
     db.commit()
     db.refresh(uploaded_doc)
-    logger.info(f"Document persisted to SQL DB with id={uploaded_doc.id}: '{document.filename}'")
+    logger.info(f"Document persisted to SQL DB with id={uploaded_doc.id}")
 
     chunks = chunk_text(content)
 
@@ -162,9 +166,7 @@ def save_document(document: UploadFile, db: Session, user_id: str) -> Document:
         metadatas=metadatas,
         ids=chunk_ids,
     )
-    logger.info(
-        f"Stored {len(chunks)} chunk(s) in ChromaDB for doc id={uploaded_doc.id}: '{document.filename}'"
-    )
+    logger.info(f"Stored {len(chunks)} chunk(s) in ChromaDB for doc id={uploaded_doc.id}")
     
     return uploaded_doc
 
@@ -185,9 +187,11 @@ def get_document(db: Session, document_id: int, user_id: str) -> Document:
         .first()
     )
     if doc:
-        logger.info(f"Document found: id={document_id}, name='{doc.name}'")
+        logger.info(f"Document found: id={document_id}")
+        logger.debug(f"Document id={document_id} has name='{doc.name}'")
     else:
-        logger.warning(f"Document not found or not owned: id={document_id}, user={user_id}")
+        logger.warning(f"Document not found or not owned: id={document_id}")
+        logger.debug(f"Lookup miss for id={document_id}, user={user_id}")
     return doc
 
 
@@ -200,7 +204,8 @@ def delete_document(document_id: int, db: Session, user_id: str) -> bool:
     :param user_id: Clerk user ID of the requesting caller
     :return: True if deletion was successful, False otherwise
     """
-    logger.info(f"Attempting to delete document id={document_id} for user={user_id}")
+    logger.info(f"Attempting to delete document id={document_id}")
+    logger.debug(f"Delete requested by user={user_id}")
     document = (
         db.query(Document)
         .filter(Document.id == document_id, Document.user_id == user_id)
@@ -221,9 +226,10 @@ def delete_document(document_id: int, db: Session, user_id: str) -> bool:
 
         db.delete(document)
         db.commit()
-        logger.info(f"Document deleted from SQL DB: id={document_id}, name='{document.name}'")
+        logger.info(f"Document deleted from SQL DB: id={document_id}")
         return True
 
-    logger.warning(f"Delete failed — document id={document_id} not found or not owned by user={user_id}")
+    logger.warning(f"Delete failed — document id={document_id} not found or not owned")
+    logger.debug(f"Failed delete requested by user={user_id}")
     return False
 

@@ -17,10 +17,8 @@ async def upload_document(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    logger.info(
-        f"POST /upload — filename='{document.filename}', "
-        f"content_type='{document.content_type}', user={user_id}"
-    )
+    logger.info(f"POST /upload — content_type='{document.content_type}'")
+    logger.debug(f"Upload of '{document.filename}' by user={user_id}")
     if not document:
         logger.warning("Upload request received with no file")
         raise HTTPException(status_code=400, detail="No file provided")
@@ -34,12 +32,11 @@ async def upload_document(
     try:
         db_doc = save_document(document, db, user_id)
     except ValueError as e:
-        logger.error(f"Upload failed for '{document.filename}': {e}")
+        logger.error(f"Upload failed: {e}")
+        logger.debug(f"Failed upload was '{document.filename}'")
         raise HTTPException(status_code=422, detail=str(e))
 
-    logger.info(
-        f"Upload successful — id={db_doc.id}, name='{db_doc.name}', size={size_in_bytes} bytes"
-    )
+    logger.info(f"Upload successful — id={db_doc.id}, size={size_in_bytes} bytes")
     return {
         "id": db_doc.id,
         "name": db_doc.name,
@@ -54,7 +51,8 @@ async def fetch_documents(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    logger.info(f"GET /fetch/all — fetching documents for user={user_id}")
+    logger.info("GET /fetch/all")
+    logger.debug(f"Fetching all documents for user={user_id}")
     documents = db.query(Document).filter(Document.user_id == user_id).all()
     logger.info(f"Returning {len(documents)} document(s)")
     return [
@@ -74,13 +72,14 @@ async def fetch_file(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    logger.info(f"GET /fetch/{file_id} — user={user_id}")
+    logger.info(f"GET /fetch/{file_id}")
+    logger.debug(f"Fetch of id={file_id} by user={user_id}")
     db_file = get_document(db, file_id, user_id)
     if not db_file:
-        logger.warning(f"File not found or not owned: id={file_id}, user={user_id}")
+        logger.warning(f"File not found or not owned: id={file_id}")
         raise HTTPException(status_code=404, detail="File not found")
 
-    logger.info(f"Returning file metadata: id={file_id}, name='{db_file.name}'")
+    logger.info(f"Returning file metadata: id={file_id}")
     return {
         "filename": db_file.name
     }
@@ -91,9 +90,10 @@ async def delete_file(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    logger.info(f"DELETE /delete/{file_id} — user={user_id}")
+    logger.info(f"DELETE /delete/{file_id}")
+    logger.debug(f"Delete of id={file_id} by user={user_id}")
     if not delete_document(file_id, db, user_id):
-        logger.warning(f"Delete request for non-existent or unowned file: id={file_id}, user={user_id}")
+        logger.warning(f"Delete request for non-existent or unowned file: id={file_id}")
         raise HTTPException(status_code=404, detail="File not found")
 
     logger.info(f"File deleted successfully: id={file_id}")
