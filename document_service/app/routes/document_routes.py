@@ -5,6 +5,7 @@ from app.models.document_model import Document
 from app.crud.document_crud import save_document, get_document, delete_document
 from app.core.auth import get_current_user_id
 from app.core.logging import get_logger
+from app.core.uploads import measure_upload
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -23,11 +24,8 @@ async def upload_document(
         logger.warning("Upload request received with no file")
         raise HTTPException(status_code=400, detail="No file provided")
 
-    content = await document.read()
-    size_in_bytes = len(content)
+    size_in_bytes = await measure_upload(document)
     logger.debug(f"File size: {size_in_bytes} bytes")
-
-    await document.seek(0)
 
     try:
         db_doc = save_document(document, db, user_id, size_in_bytes)

@@ -4,6 +4,7 @@ from app.routes import document_routes
 from app.db.database import Base, engine
 from app.models.document_model import Document
 from app.core.logging import get_logger
+from app.core.uploads import limit_request_body_size
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = get_logger(__name__)
@@ -12,6 +13,8 @@ app = FastAPI(title="FastAPI Backend for File Handling", version="0.1.0")
 
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
 ALLOWED_ORIGINS = [origin.strip() for origin in _raw_origins.split(",")]
+
+app.middleware("http")(limit_request_body_size)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,4 +35,4 @@ def init_db():
 @app.get("/")
 def read_root():
     logger.debug("Health check endpoint hit")
-    return {"message": "Welcome to the FastAPI backend for file handling!"}
+    return {"message": "Welcome to the FastAPI backend for file handling!"}
