@@ -1,18 +1,6 @@
 version: '3.9'
 
 services:
-  authdb:
-    image: mysql
-    container_name: authdb
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: users
-    ports:
-      - "3306:3306"
-    volumes:
-      - authdb-data:/var/lib/mysql
-  
   postgresdb:
     image: postgres
     container_name: postgresdb
@@ -34,17 +22,6 @@ services:
     volumes:
       - chroma-data:/chroma/chroma
   
-  auth-service:
-    build: ./authentication
-    container_name: auth-service
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./authentication/.env
-    depends_on:
-      - authdb
-
-
   doc-service:
     build: ./document_service
     container_name: doc-service
@@ -72,11 +49,9 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - auth-service
       - doc-service
       - rag-service
 
 volumes:
-  authdb-data:
   postgresdb-data:
   chroma-data:
