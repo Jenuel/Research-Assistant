@@ -1,12 +1,19 @@
 import os
 from fastapi import FastAPI
 from app.routes import rag_routes
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler, throttle_by_ip
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 app = FastAPI(title="FastAPI Backend for Retrieval and Generation", version="0.1.0")
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
 ALLOWED_ORIGINS = [origin.strip() for origin in _raw_origins.split(",")]
+
+app.middleware("http")(throttle_by_ip)
 
 app.add_middleware(
     CORSMiddleware,

@@ -4,7 +4,7 @@ from functools import lru_cache
 
 import jwt
 from jwt import PyJWKClient
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 
@@ -34,6 +34,7 @@ def _jwks_client() -> PyJWKClient:
 
 
 def get_current_user_id(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> str:
     """
@@ -41,6 +42,11 @@ def get_current_user_id(
 
     Raises 401 on any failure. Never returns None — a route that depends on this
     is guaranteed an authenticated caller.
+
+    Also stashes the verified ID on `request.state.user_id`, which is how the
+    rate limiter keys buckets per user: slowapi's `key_func` receives only the
+    request, not resolved dependencies. Set only after every check passes, so an
+    unverified `sub` can never reach the limiter.
     """
     token = credentials.credentials
 
@@ -74,4 +80,5 @@ def get_current_user_id(
     if not user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token missing subject")
 
+    request.state.user_id = user_id
     return user_id
