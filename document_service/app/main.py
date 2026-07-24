@@ -4,17 +4,23 @@ from app.routes import document_routes
 from app.db.database import Base, engine
 from app.models.document_model import Document
 from app.core.logging import get_logger
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler, throttle_by_ip
 from app.core.uploads import limit_request_body_size
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI Backend for File Handling", version="0.1.0")
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
 ALLOWED_ORIGINS = [origin.strip() for origin in _raw_origins.split(",")]
 
 app.middleware("http")(limit_request_body_size)
+app.middleware("http")(throttle_by_ip)
 
 app.add_middleware(
     CORSMiddleware,

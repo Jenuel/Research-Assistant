@@ -1,10 +1,16 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.document_model import Document
 from app.crud.document_crud import save_document, get_document, delete_document
 from app.core.auth import get_current_user_id
 from app.core.logging import get_logger
+from app.core.rate_limit import (
+    DELETE_RATE_LIMITS,
+    READ_RATE_LIMITS,
+    UPLOAD_RATE_LIMITS,
+    limiter,
+)
 from app.core.uploads import measure_upload
 from datetime import datetime
 
@@ -13,7 +19,10 @@ logger = get_logger(__name__)
 router = APIRouter(dependencies=[Depends(get_current_user_id)])
 
 @router.post("/upload")
+@limiter.limit(UPLOAD_RATE_LIMITS)
 async def upload_document(
+    request: Request,
+    response: Response,
     document: UploadFile = File(...),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
@@ -45,7 +54,10 @@ async def upload_document(
 
 
 @router.get("/fetch/all")
+@limiter.limit(READ_RATE_LIMITS)
 async def fetch_documents(
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
@@ -75,7 +87,10 @@ async def fetch_documents(
     ]
 
 @router.get("/fetch/{file_id}")
+@limiter.limit(READ_RATE_LIMITS)
 async def fetch_file(
+    request: Request,
+    response: Response,
     file_id: int,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
@@ -93,7 +108,10 @@ async def fetch_file(
     }
 
 @router.delete("/delete/{file_id}")
+@limiter.limit(DELETE_RATE_LIMITS)
 async def delete_file(
+    request: Request,
+    response: Response,
     file_id: int,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
