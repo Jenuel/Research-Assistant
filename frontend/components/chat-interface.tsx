@@ -36,15 +36,15 @@ export default function ChatInterface() {
                 <ul className="text-sm text-gray-400 space-y-2">
                   <li className="flex items-center">
                     <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
-                    "Summarize the main points"
+                    &quot;Summarize the main points&quot;
                   </li>
                   <li className="flex items-center">
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-2"></span>
-                    "What are the key findings?"
+                    &quot;What are the key findings?&quot;
                   </li>
                   <li className="flex items-center">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-2"></span>
-                    "Extract important dates"
+                    &quot;Extract important dates&quot;
                   </li>
                 </ul>
               </div>

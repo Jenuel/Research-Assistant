@@ -243,7 +243,7 @@ export default function DocumentList() {
                             Delete Document
                           </AlertDialogTitle>
                           <AlertDialogDescription className="text-gray-400">
-                            Are you sure you want to delete "{file.name}"? This action cannot be undone.
+                            Are you sure you want to delete &quot;{file.name}&quot;? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
