@@ -1,44 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { useUser } from "@clerk/nextjs"
 import DashboardHeader from "@/components/dashboard-header"
 import DocumentList from "@/components/document-list"
 import ChatInterface from "@/components/chat-interface"
 import { useDocumentStore } from "@/lib/document-store"
 import { Brain } from "lucide-react"
-import axios from 'axios'
 
 export default function DashboardPage() {
-  const router = useRouter()
+  const { isLoaded, user } = useUser()
   const { setUserEmail } = useDocumentStore()
-  const [mounted, setMounted] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    if (!isLoaded) return
 
-    const verifyAuth = async () => {
-      try {
-        const response = await axios.post("http://localhost:5000/auth/verify", {}, {
-          withCredentials: true
-        });
+    setUserEmail(user?.primaryEmailAddress?.emailAddress ?? "")
+  }, [isLoaded, user, setUserEmail])
 
-        if (response.status === 200) {
-          setIsAuthenticated(true)
-          setUserEmail(response.data.user?.email || "")
-        }
-      } catch (error) {
-        console.error("Error Message:", error)
-        router.push("/login")
-      }
-    };
-
-    verifyAuth();
-
-  }, [router, setUserEmail])
-
-  if (!mounted || !isAuthenticated) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">

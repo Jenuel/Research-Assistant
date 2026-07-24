@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-import axios from "axios"
 import { create } from "zustand"
+
+import { documentApi } from "./api"
 
 export interface UploadedFile {
   id: string
@@ -29,7 +30,7 @@ interface DocumentState {
   setLoadingDocuments: (loading: boolean) => void
 }
 
-export const useDocumentStore = create<DocumentState>((set, get) => ({
+export const useDocumentStore = create<DocumentState>((set) => ({
   uploadedFiles: [],
   userEmail: "",
   selectedFilesCount: 0,
@@ -59,7 +60,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isDeletingFile: true, deletingFileId: fileId })
 
     try {
-      await axios.delete(`http://localhost:6060/api/documents/delete/${fileId}`)
+      await documentApi.delete(`/api/documents/delete/${fileId}`)
 
       set((state) => {
         const updatedFiles = state.uploadedFiles.filter((file) => file.id !== fileId)
@@ -81,14 +82,16 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ isLoadingDocuments: true });
 
     try {
-      const response = await axios.get("http://localhost:6060/api/documents/fetch/all");
+      const response = await documentApi.get("/api/documents/fetch/all");
       const fetchedDocuments = response.data;
 
-      const normalizedDocuments = fetchedDocuments.map((file: any) => ({
-        ...file,
-        uploadDate: new Date(file.uploadDate),
-        checked: false,
-      }));
+      const normalizedDocuments = fetchedDocuments.map(
+        (file: Omit<UploadedFile, "uploadDate" | "checked"> & { uploadDate: string }) => ({
+          ...file,
+          uploadDate: new Date(file.uploadDate),
+          checked: false,
+        }),
+      );
 
       set({ uploadedFiles: normalizedDocuments });
     } catch (error) {
@@ -114,7 +117,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         try {
           const formData = new FormData();
           formData.append("document", file)
-          const response = await axios.post("http://localhost:6060/api/documents/upload", formData, {
+          const response = await documentApi.post("/api/documents/upload", formData, {
             headers: {
               "Content-type": "multipart/form-data"
             },

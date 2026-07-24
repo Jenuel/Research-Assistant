@@ -2,7 +2,9 @@
 
 import { create } from "zustand"
 import { useDocumentStore } from "./document-store"
-import axios from "axios";
+import { isAxiosError } from "axios";
+
+import { ragApi } from "./api";
 
 export interface ChatMessage {
   id: string
@@ -46,15 +48,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     const selectedFiles = useDocumentStore.getState().uploadedFiles.filter((file) => file.checked)
     const selectedIds = selectedFiles.map((file) => file.id)
-    
+
     try {
-      console.log(selectedIds)
-      const response = await axios.post("http://localhost:7000/api/rag/generate", {
+      const response = await ragApi.post("/api/rag/generate", {
         query: currentMessage,
         ids: selectedIds
       });
-
-      console.log(response)
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -62,16 +61,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
         content: response.data.response,
         timestamp: new Date(),
       }
-      
+
       set((state) => ({
         chatMessages: [...state.chatMessages, assistantMessage],
         isLoading: false,
       }))
     } catch (error) {
+      const status = isAxiosError(error) ? error.response?.status : undefined
+
+      const content =
+        status === 401
+          ? "Your session has expired. Please sign in again."
+          : status === 429
+            ? "You have sent too many requests. Please wait a moment and try again."
+            : "Something went wrong with the server. Please try again later"
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: "Something went wrong with the server. Please try again later",
+        content,
         timestamp: new Date(),
       }
 

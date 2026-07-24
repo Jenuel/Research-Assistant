@@ -12,7 +12,7 @@ services:
       - "5431:5432"
     volumes:
       - postgresdb-data:/var/lib/postgresql/data
-  
+
   vecdb:
     image: chromadb/chroma:latest
     container_name: vecdb
@@ -21,17 +21,32 @@ services:
       - "8080:8000"
     volumes:
       - chroma-data:/chroma/chroma
-  
+
+  cache:
+    image: redis:7-alpine
+    container_name: cache
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   doc-service:
     build: ./document_service
     container_name: doc-service
     ports:
-      - "6060:6060" 
+      - "6060:6060"
     env_file:
       - ./document_service/.env
+    environment:
+      RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
       - postgresdb
       - vecdb
+      - cache
 
   rag-service:
     build: ./rag_service
@@ -40,14 +55,19 @@ services:
       - "7000:7000"
     env_file:
       - ./rag_service/.env
+    environment:
+      RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
       - vecdb
+      - cache
 
-  frontend-service: 
+  frontend-service:
     build: ./frontend
     container_name: frontend-service
     ports:
       - "3000:3000"
+    env_file:
+      - ./frontend/.env.local
     depends_on:
       - doc-service
       - rag-service
