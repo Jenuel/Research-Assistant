@@ -40,7 +40,8 @@ services:
     ports:
       - "6060:6060"
     env_file:
-      - ./document_service/.env
+      - path: ./document_service/.env
+        required: false
     environment:
       RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
@@ -54,7 +55,8 @@ services:
     ports:
       - "7000:7000"
     env_file:
-      - ./rag_service/.env
+      - path: ./rag_service/.env
+        required: false
     environment:
       RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
@@ -67,7 +69,8 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ./frontend/.env.local
+      - path: ./frontend/.env.local
+        required: false
     depends_on:
       - doc-service
       - rag-service
