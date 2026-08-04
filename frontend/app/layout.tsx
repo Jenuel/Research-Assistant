@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Archivo } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
-import "./globals.css"
 import "./design-system.css"
 import "./theme.css"
 
@@ -18,8 +17,8 @@ const archivo = Archivo({
 })
 
 export const metadata: Metadata = {
-  title: "DocuChat AI",
-  description: "Chat with your documents using AI",
+  title: "DocuChat",
+  description: "Answers from the documents you choose.",
 }
 
 export default function RootLayout({
@@ -30,7 +29,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={archivo.variable}>
-        <body className={`${archivo.className} min-h-screen`}>
+        <body className={archivo.className}>
           <ClerkTokenBridge />
           {children}
         </body>
