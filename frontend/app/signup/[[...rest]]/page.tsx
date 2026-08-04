@@ -1,18 +1,12 @@
 import { SignUp } from "@clerk/nextjs"
 
-import AuthLayout from "@/components/auth-layout"
+import AuthShell from "@/components/auth-shell"
+import { clerkAppearance } from "@/lib/clerk-appearance"
 
-export default function SignUpPage() {
+export default function SignupPage() {
   return (
-    <AuthLayout>
-      <SignUp
-        appearance={{
-          elements: {
-            rootBox: "w-full max-w-md",
-            card: "bg-gray-800/50 border border-gray-700 backdrop-blur-sm shadow-xl",
-          },
-        }}
-      />
-    </AuthLayout>
+    <AuthShell heading="Create an account">
+      <SignUp appearance={clerkAppearance} />
+    </AuthShell>
   )
 }
