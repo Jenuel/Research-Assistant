@@ -1,0 +1,17 @@
+# Secrets — supplied at run time via compose env_file, never baked into a layer
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+
+# Host artefacts: wrong-platform binaries and a stale build cache
+node_modules
+.next
+out
+build
+
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
