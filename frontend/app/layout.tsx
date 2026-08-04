@@ -1,12 +1,21 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Archivo } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
+import "./design-system.css"
+import "./theme.css"
 
 import ClerkTokenBridge from "@/components/clerk-token-bridge"
 
-const inter = Inter({ subsets: ["latin"] })
+// Modernist is set entirely in Archivo. theme.css points both font roles at
+// this variable, so no page hard-codes a family name.
+const archivo = Archivo({
+  subsets: ["latin"],
+  weight: ["400", "600", "800"],
+  variable: "--font-archivo",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "DocuChat AI",
@@ -20,8 +29,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.className} min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900`}>
+      <html lang="en" className={archivo.variable}>
+        <body className={`${archivo.className} min-h-screen`}>
           <ClerkTokenBridge />
           {children}
         </body>
