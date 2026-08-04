@@ -28,6 +28,15 @@ function withAuth(instance: AxiosInstance): AxiosInstance {
   return instance
 }
 
-export const documentApi = withAuth(axios.create({ baseURL: DOCUMENT_API_URL }))
+// axios defaults to no timeout at all, which turns a hung backend into a
+// spinner that never resolves. The budgets differ because the work does: a
+// generate call waits on Gemini, an upload is parsed, chunked and embedded.
+export const documentApi = withAuth(
+  axios.create({ baseURL: DOCUMENT_API_URL, timeout: 30_000 }),
+)
 
-export const ragApi = withAuth(axios.create({ baseURL: RAG_API_URL }))
+export const ragApi = withAuth(
+  axios.create({ baseURL: RAG_API_URL, timeout: 90_000 }),
+)
+
+export const UPLOAD_TIMEOUT_MS = 120_000
