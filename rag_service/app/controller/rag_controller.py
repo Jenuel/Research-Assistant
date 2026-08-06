@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip() or "gemini-3.5-flash"
+
 SYSTEM_INSTRUCTION = (
     "You are a research assistant. You answer questions using only the documents "
     "supplied in the user turn.\n\n"
@@ -96,7 +98,7 @@ def generate_response(query: str, answers: list[str]):
     response_text = ""
 
     model = genai.GenerativeModel(
-        'gemini-2.5-flash-preview-04-17',
+        GEMINI_MODEL,
         system_instruction=SYSTEM_INSTRUCTION,
     )
 
