@@ -11,6 +11,8 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // `next lint` skipped build output implicitly; bare `eslint .` does not.
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
 ];
 
 export default eslintConfig;

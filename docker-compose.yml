@@ -1,18 +1,6 @@
 version: '3.9'
 
 services:
-  authdb:
-    image: mysql
-    container_name: authdb
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: users
-    ports:
-      - "3306:3306"
-    volumes:
-      - authdb-data:/var/lib/mysql
-  
   postgresdb:
     image: postgres
     container_name: postgresdb
@@ -24,7 +12,7 @@ services:
       - "5431:5432"
     volumes:
       - postgresdb-data:/var/lib/postgresql/data
-  
+
   vecdb:
     image: chromadb/chroma:latest
     container_name: vecdb
@@ -33,28 +21,33 @@ services:
       - "8080:8000"
     volumes:
       - chroma-data:/chroma/chroma
-  
-  auth-service:
-    build: ./authentication
-    container_name: auth-service
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./authentication/.env
-    depends_on:
-      - authdb
 
+  cache:
+    image: redis:7-alpine
+    container_name: cache
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   doc-service:
     build: ./document_service
     container_name: doc-service
     ports:
-      - "6060:6060" 
+      - "6060:6060"
     env_file:
-      - ./document_service/.env
+      - path: ./document_service/.env
+        required: false
+    environment:
+      RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
       - postgresdb
       - vecdb
+      - cache
 
   rag-service:
     build: ./rag_service
@@ -62,21 +55,26 @@ services:
     ports:
       - "7000:7000"
     env_file:
-      - ./rag_service/.env
+      - path: ./rag_service/.env
+        required: false
+    environment:
+      RATE_LIMIT_STORAGE_URI: redis://cache:6379
     depends_on:
       - vecdb
+      - cache
 
-  frontend-service: 
+  frontend-service:
     build: ./frontend
     container_name: frontend-service
     ports:
       - "3000:3000"
+    env_file:
+      - path: ./frontend/.env.local
+        required: false
     depends_on:
-      - auth-service
       - doc-service
       - rag-service
 
 volumes:
-  authdb-data:
   postgresdb-data:
   chroma-data:
