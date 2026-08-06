@@ -1,0 +1,7 @@
+# Test-only dependencies. Not installed into the container image.
+#   pip install -r requirements.txt -r requirements-dev.txt
+#   pytest tests/ -v
+pytest==8.3.4
+# Starlette's TestClient is built on httpx; without it the test suite
+# cannot make requests at all.
+httpx==0.28.1
